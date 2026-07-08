@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Identicon Generator</title>
+
+<style>
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #111827;
+    color: white;
+    font-family: monospace;
+}
+
+.container {
+    text-align: center;
+    background: #1f2937;
+    padding: 30px;
+    border-radius: 16px;
+}
+
+input {
+    padding: 12px;
+    width: 250px;
+    background: #111827;
+    border: 1px solid #374151;
+    color: white;
+    border-radius: 8px;
+}
+
+button {
+    margin: 10px;
+    padding: 12px 20px;
+    background: #2563eb;
+    color:white;
+    border:0;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+canvas {
+    margin-top:20px;
+    image-rendering: pixelated;
+    background:white;
+    border-radius:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>◼ Identicon Generator</h1>
+
+<input id="text" value="qianyu">
+<br>
+
+<button onclick="generate()">Generate</button>
+<button onclick="download()">Download</button>
+
+<br>
+
+<canvas id="canvas" width="300" height="300"></canvas>
+
+</div>
+
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+
+function hash(str){
+
+    let hash = 0;
+
+    for(let i=0;i<str.length;i++){
+        hash = str.charCodeAt(i) + ((hash<<5)-hash);
+    }
+
+    return Math.abs(hash);
+}
+
+
+function generate(){
+
+    const input = document.getElementById("text").value || "anonymous";
+
+    const seed = hash(input);
+
+    const color =
+        `hsl(${seed % 360},70%,55%)`;
+
+
+    ctx.clearRect(0,0,300,300);
+
+
+    const size = 5;
+    const cell = 50;
+
+
+    ctx.fillStyle = "#f9fafb";
+    ctx.fillRect(0,0,300,300);
+
+
+    let random = seed;
+
+
+    function rand(){
+
+        random = (random * 9301 + 49297) % 233280;
+
+        return random / 233280;
+    }
+
+
+    ctx.fillStyle = color;
+
+
+    for(let y=0;y<size;y++){
+
+        for(let x=0;x<3;x++){
+
+            if(rand() > 0.5){
+
+                ctx.fillRect(
+                    x*cell,
+                    y*cell,
+                    cell,
+                    cell
+                );
+
+
+                // 左右反転コピー
+                ctx.fillRect(
+                    (size-1-x)*cell,
+                    y*cell,
+                    cell,
+                    cell
+                );
+            }
+        }
+    }
+
+}
+
+
+function download(){
+
+    const link=document.createElement("a");
+
+    link.download="identicon.png";
+
+    link.href=canvas.toDataURL();
+
+    link.click();
+
+}
+
+
+generate();
+
+</script>
+
+</body>
+</html>
