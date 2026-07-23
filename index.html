@@ -1,172 +1,456 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Identicon Generator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Identicon Generator</title>
 
-<style>
-body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #111827;
-    color: white;
-    font-family: monospace;
-}
+  <script src="https://cdn.tailwindcss.com"></script>
 
-.container {
-    text-align: center;
-    background: #1f2937;
-    padding: 30px;
-    border-radius: 16px;
-}
+  <style>
+    body {
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
 
-input {
-    padding: 12px;
-    width: 250px;
-    background: #111827;
-    border: 1px solid #374151;
-    color: white;
-    border-radius: 8px;
-}
-
-button {
-    margin: 10px;
-    padding: 12px 20px;
-    background: #2563eb;
-    color:white;
-    border:0;
-    border-radius:8px;
-    cursor:pointer;
-}
-
-canvas {
-    margin-top:20px;
-    image-rendering: pixelated;
-    background:white;
-    border-radius:10px;
-}
-</style>
+    .checkerboard {
+      background-image:
+        linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+        linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+        linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+      background-size: 20px 20px;
+      background-position:
+        0 0,
+        0 10px,
+        10px -10px,
+        -10px 0;
+    }
+  </style>
 </head>
 
-<body>
+<body class="min-h-screen bg-slate-950 text-white">
 
-<div class="container">
-<h1>◼ Identicon Generator</h1>
+  <main class="mx-auto flex min-h-screen max-w-6xl items-center px-4 py-8">
+    <div class="grid w-full gap-6 lg:grid-cols-[1fr_420px]">
 
-<input id="text" value="qianyu">
-<br>
+      <!-- Preview -->
+      <section
+        class="flex min-h-[560px] flex-col justify-between rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl"
+      >
+        <div>
+          <div class="mb-2 flex items-center gap-3">
+            <div class="h-3 w-3 rounded-full bg-cyan-400"></div>
+            <p class="text-sm font-medium uppercase tracking-[0.25em] text-slate-400">
+              Identicon Generator
+            </p>
+          </div>
 
-<button onclick="generate()">Generate</button>
-<button onclick="download()">Download</button>
+          <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">
+            Text → Identity
+          </h1>
 
-<br>
+          <p class="mt-4 max-w-xl text-slate-400">
+            文字列から、毎回同じ結果になるオリジナルのIdenticonを生成します。
+          </p>
+        </div>
 
-<canvas id="canvas" width="300" height="300"></canvas>
+        <div class="flex flex-1 items-center justify-center py-10">
+          <div
+            id="previewContainer"
+            class="checkerboard rounded-3xl p-5 shadow-2xl"
+          >
+            <svg
+              id="identicon"
+              viewBox="0 0 500 500"
+              class="h-[min(65vw,420px)] w-[min(65vw,420px)] rounded-2xl"
+              xmlns="http://www.w3.org/2000/svg"
+            ></svg>
+          </div>
+        </div>
 
-</div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p class="text-xs uppercase tracking-widest text-slate-500">
+              Current seed
+            </p>
+            <p id="seedLabel" class="mt-1 max-w-[360px] truncate font-mono text-sm text-slate-300">
+              hello world
+            </p>
+          </div>
 
+          <button
+            id="randomButton"
+            class="rounded-xl border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/20"
+          >
+            Randomize
+          </button>
+        </div>
+      </section>
 
-<script>
+      <!-- Controls -->
+      <section
+        class="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl"
+      >
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold">Customize</h2>
+          <p class="mt-1 text-sm text-slate-400">
+            入力を変えると、同じアルゴリズムで別のアイコンを生成します。
+          </p>
+        </div>
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+        <div class="space-y-6">
 
+          <!-- Text -->
+          <div>
+            <label
+              for="textInput"
+              class="mb-2 block text-sm font-medium text-slate-300"
+            >
+              Input text
+            </label>
 
-function hash(str){
+            <input
+              id="textInput"
+              type="text"
+              value="hello world"
+              placeholder="username, email, ID..."
+              class="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+            />
+          </div>
 
-    let hash = 0;
+          <!-- Grid Size -->
+          <div>
+            <div class="mb-2 flex items-center justify-between">
+              <label
+                for="gridSize"
+                class="text-sm font-medium text-slate-300"
+              >
+                Grid size
+              </label>
 
-    for(let i=0;i<str.length;i++){
-        hash = str.charCodeAt(i) + ((hash<<5)-hash);
+              <span
+                id="gridValue"
+                class="rounded-lg bg-white/10 px-2 py-1 font-mono text-xs text-cyan-300"
+              >
+                5 × 5
+              </span>
+            </div>
+
+            <input
+              id="gridSize"
+              type="range"
+              min="3"
+              max="9"
+              value="5"
+              class="w-full accent-cyan-400"
+            />
+          </div>
+
+          <!-- Foreground -->
+          <div>
+            <label
+              for="foregroundColor"
+              class="mb-2 block text-sm font-medium text-slate-300"
+            >
+              Foreground color
+            </label>
+
+            <div class="flex gap-3">
+              <input
+                id="foregroundColor"
+                type="color"
+                value="#22d3ee"
+                class="h-12 w-16 cursor-pointer rounded-xl border border-white/10 bg-transparent"
+              />
+
+              <input
+                id="foregroundHex"
+                type="text"
+                value="#22d3ee"
+                maxlength="7"
+                class="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-4 font-mono text-sm uppercase outline-none focus:border-cyan-400"
+              />
+            </div>
+          </div>
+
+          <!-- Background -->
+          <div>
+            <label
+              for="backgroundColor"
+              class="mb-2 block text-sm font-medium text-slate-300"
+            >
+              Background color
+            </label>
+
+            <div class="flex gap-3">
+              <input
+                id="backgroundColor"
+                type="color"
+                value="#0f172a"
+                class="h-12 w-16 cursor-pointer rounded-xl border border-white/10 bg-transparent"
+              />
+
+              <input
+                id="backgroundHex"
+                type="text"
+                value="#0f172a"
+                maxlength="7"
+                class="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-4 font-mono text-sm uppercase outline-none focus:border-cyan-400"
+              />
+            </div>
+          </div>
+
+          <!-- Random Color -->
+          <button
+            id="randomColorButton"
+            class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium transition hover:bg-white/10"
+          >
+            Generate random color
+          </button>
+
+          <!-- Download -->
+          <button
+            id="downloadButton"
+            class="w-full rounded-xl bg-cyan-400 px-4 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300 active:scale-[0.98]"
+          >
+            Download SVG
+          </button>
+
+        </div>
+
+        <div class="mt-8 border-t border-white/10 pt-5">
+          <p class="text-xs leading-relaxed text-slate-500">
+            生成処理はブラウザ内だけで完結します。入力テキストをサーバーへ送信しません。
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    const textInput = document.getElementById("textInput");
+    const gridSizeInput = document.getElementById("gridSize");
+    const gridValue = document.getElementById("gridValue");
+
+    const foregroundColor = document.getElementById("foregroundColor");
+    const foregroundHex = document.getElementById("foregroundHex");
+
+    const backgroundColor = document.getElementById("backgroundColor");
+    const backgroundHex = document.getElementById("backgroundHex");
+
+    const identicon = document.getElementById("identicon");
+    const seedLabel = document.getElementById("seedLabel");
+
+    const randomButton = document.getElementById("randomButton");
+    const randomColorButton = document.getElementById("randomColorButton");
+    const downloadButton = document.getElementById("downloadButton");
+
+    /**
+     * String → deterministic 32-bit hash
+     */
+    function hashString(str) {
+      let hash = 2166136261;
+
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash +=
+          (hash << 1) +
+          (hash << 4) +
+          (hash << 7) +
+          (hash << 8) +
+          (hash << 24);
+      }
+
+      return hash >>> 0;
     }
 
-    return Math.abs(hash);
-}
+    /**
+     * Seeded pseudo-random number generator
+     */
+    function createRandom(seed) {
+      let value = seed >>> 0;
 
+      return function () {
+        value += 0x6D2B79F5;
 
-function generate(){
+        let t = value;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
 
-    const input = document.getElementById("text").value || "anonymous";
-
-    const seed = hash(input);
-
-    const color =
-        `hsl(${seed % 360},70%,55%)`;
-
-
-    ctx.clearRect(0,0,300,300);
-
-
-    const size = 5;
-    const cell = 50;
-
-
-    ctx.fillStyle = "#f9fafb";
-    ctx.fillRect(0,0,300,300);
-
-
-    let random = seed;
-
-
-    function rand(){
-
-        random = (random * 9301 + 49297) % 233280;
-
-        return random / 233280;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
     }
 
+    /**
+     * Generate symmetric identicon SVG
+     */
+    function generateIdenticon() {
+      const text = textInput.value || "empty";
+      const gridSize = Number(gridSizeInput.value);
 
-    ctx.fillStyle = color;
+      const foreground = foregroundColor.value;
+      const background = backgroundColor.value;
 
+      const seed = hashString(text);
+      const random = createRandom(seed);
 
-    for(let y=0;y<size;y++){
+      const cellSize = 500 / gridSize;
 
-        for(let x=0;x<3;x++){
+      let svg = `
+        <rect
+          width="500"
+          height="500"
+          fill="${background}"
+        />
+      `;
 
-            if(rand() > 0.5){
+      // 左半分 + 中央列を生成し、右側へミラーリング
+      const halfWidth = Math.ceil(gridSize / 2);
 
-                ctx.fillRect(
-                    x*cell,
-                    y*cell,
-                    cell,
-                    cell
-                );
+      for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < halfWidth; col++) {
 
+          // ランダムな閾値でセルを決定
+          const filled = random() > 0.48;
 
-                // 左右反転コピー
-                ctx.fillRect(
-                    (size-1-x)*cell,
-                    y*cell,
-                    cell,
-                    cell
-                );
-            }
+          if (!filled) continue;
+
+          const x = col * cellSize;
+          const mirroredCol = gridSize - col - 1;
+          const mirroredX = mirroredCol * cellSize;
+          const y = row * cellSize;
+
+          svg += `
+            <rect
+              x="${x}"
+              y="${y}"
+              width="${cellSize}"
+              height="${cellSize}"
+              fill="${foreground}"
+            />
+          `;
+
+          // 中央列では二重描画しない
+          if (mirroredCol !== col) {
+            svg += `
+              <rect
+                x="${mirroredX}"
+                y="${y}"
+                width="${cellSize}"
+                height="${cellSize}"
+                fill="${foreground}"
+              />
+            `;
+          }
         }
+      }
+
+      identicon.innerHTML = svg;
+
+      gridValue.textContent = `${gridSize} × ${gridSize}`;
+      seedLabel.textContent = text;
     }
 
-}
+    function isValidHex(value) {
+      return /^#[0-9A-F]{6}$/i.test(value);
+    }
 
+    function syncColorPicker(input, picker) {
+      if (!isValidHex(input.value)) return;
 
-function download(){
+      picker.value = input.value;
+      generateIdenticon();
+    }
 
-    const link=document.createElement("a");
+    function randomHex() {
+      return "#" + Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, "0");
+    }
 
-    link.download="identicon.png";
+    // Text
+    textInput.addEventListener("input", generateIdenticon);
 
-    link.href=canvas.toDataURL();
+    // Grid
+    gridSizeInput.addEventListener("input", generateIdenticon);
 
-    link.click();
+    // Color pickers
+    foregroundColor.addEventListener("input", () => {
+      foregroundHex.value = foregroundColor.value;
+      generateIdenticon();
+    });
 
-}
+    backgroundColor.addEventListener("input", () => {
+      backgroundHex.value = backgroundColor.value;
+      generateIdenticon();
+    });
 
+    // Hex inputs
+    foregroundHex.addEventListener("input", () => {
+      syncColorPicker(foregroundHex, foregroundColor);
+    });
 
-generate();
+    backgroundHex.addEventListener("input", () => {
+      syncColorPicker(backgroundHex, backgroundColor);
+    });
 
-</script>
+    // Random seed
+    randomButton.addEventListener("click", () => {
+      const randomSeed = crypto.randomUUID();
+
+      textInput.value = randomSeed;
+      generateIdenticon();
+    });
+
+    // Random color
+    randomColorButton.addEventListener("click", () => {
+      const foreground = randomHex();
+      const background = randomHex();
+
+      foregroundColor.value = foreground;
+      foregroundHex.value = foreground;
+
+      backgroundColor.value = background;
+      backgroundHex.value = background;
+
+      generateIdenticon();
+    });
+
+    // Download SVG
+    downloadButton.addEventListener("click", () => {
+      const serializer = new XMLSerializer();
+
+      const svgString = serializer.serializeToString(identicon);
+
+      const blob = new Blob(
+        [svgString],
+        { type: "image/svg+xml;charset=utf-8" }
+      );
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `identicon-${textInput.value || "icon"}.svg`;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+    });
+
+    // Initial render
+    generateIdenticon();
+  </script>
 
 </body>
 </html>
